@@ -1,0 +1,30 @@
+name: Plastic-Free-Bot
+on:
+repository_dispatch:
+types: [line_upload]
+workflow_dispatch:
+jobs:
+process:
+runs-on: ubuntu-latest
+permissions:
+contents: write
+steps:
+- uses: actions/checkout@v4
+- name: Set up Python
+uses: actions/setup-python@v4
+with:
+python-version: '3.10'
+- name: Install dependencies
+run: pip install google-generativeai
+- name: Run logic
+env:
+GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+USER_ID: ${{ github.event.client_payload.user_id }}
+ACTIVITY_THEME: ${{ github.event.client_payload.theme }}
+run: python process_activity.py
+- name: Commit data
+run: |
+git config --global user.name "Github-Action-Bot"
+git config --global user.email "bot@github.com"
+git add data/progress.json
+git diff --quiet && git diff --staged --quiet || (git commit -m "Update
