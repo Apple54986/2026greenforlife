@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的減塑小森林</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; text-align: center; background-color: #f0f7f0; color: #2d5a27; }
+        .container { max-width: 600px; margin: 50px auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        #tree-display { font-size: 100px; margin: 20px 0; transition: transform 0.3s; }
+        .status-box { background: #e8f5e9; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 70%; }
+        button { padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .history { text-align: left; font-size: 0.9em; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🌲 減塑小森林</h1>
+    <p>輸入你的 LINE ID 查看小樹成長狀況</p>
+    
+    <input type="text" id="userId" placeholder="請輸入 LINE ID">
+    <button onclick="checkProgress()">查看</button>
+
+    <div id="result-area" style="display:none;">
+        <div id="tree-display">🌱</div>
+        <div class="status-box">
+            <h3 id="tree-level">成長階段：種子</h3>
+            <p>總成長值：<span id="growth-value">0</span> / 100</p>
+        </div>
+        <h4>📜 守護者筆記：</h4>
+        <div id="history-list" class="history"></div>
+    </div>
+</div>
+
+<script>
+    async function checkProgress() {
+        const userId = document.getElementById('userId').value.trim();
+        const resultArea = document.getElementById('result-area');
+        
+        if (!userId) return alert('請輸入 ID');
+
+        try {
+            // 讀取 GitHub 上的 JSON 資料 (加上時間戳避免快取問題)
+            const response = await fetch('data/progress.json?t=' + Date.now());
+            const data = await response.json();
+
+            if (data[userId]) {
+                const user = data[userId];
+                const score = user.total_growth;
+                resultArea.style.display = 'block';
+                
+                // 顯示總分
+                document.getElementById('growth-value').innerText = score;
+                
+                // 根據點數變換 Emoji 樹木
+                let treeEmoji = "🌱";
+                let levelName = "剛發芽的小苗";
+                
+                if (score >= 20) { treeEmoji = "🌿"; levelName = "努力長葉中"; }
+                if (score >= 40) { treeEmoji = "🪴"; levelName = "充滿朝氣的盆栽"; }
+                if (score >= 60) { treeEmoji = "🌳"; levelName = "茁壯的大樹"; }
+                if (score >= 80) { treeEmoji = "🌲"; levelName = "茂密的森林"; }
+                if (score >= 100) { treeEmoji = "✨🌳✨"; levelName = "終極減塑守護神"; }
+
+                document.getElementById('tree-display').innerText = treeEmoji;
+                document.getElementById('tree-level').innerText = "成長階段：" + levelName;
+
+                // 顯示歷史鼓勵話語
+                const historyHtml = user.history.map(h => `<li>[${h.date}] ${h.reason}</li>`).join('');
+                document.getElementById('history-list').innerHTML = `<ul>${historyHtml}</ul>`;
+
+            } else {
+                alert('找不到這個 ID 的資料，快去 LINE 上傳照片吧！');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('資料讀取失敗，請確認活動是否已開始。');
+        }
+    }
+</script>
+
+</body>
+</html>
